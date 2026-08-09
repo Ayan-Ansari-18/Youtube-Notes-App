@@ -79,7 +79,7 @@ export async function POST(req: Request) {
     // 3. Generate Notes via AI
     let generatedNotes = "";
     try {
-       generatedNotes = await generateNotesFromTranscript(fullTranscript, videoTitle, allowedCustomPrompt);
+       generatedNotes = await generateNotesFromTranscript(fullTranscript, videoTitle, allowedCustomPrompt, isPro);
     } catch (e: any) {
       console.error("AI Generation Error inside route:", e);
       return NextResponse.json({ error: e.message || "AI Processing failed due to high demand. Please try again later." }, { status: 503 });

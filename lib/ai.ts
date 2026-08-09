@@ -14,7 +14,7 @@ function shuffleArray(array: string[]) {
   return newArr;
 }
 
-export async function generateNotesFromTranscript(transcript: string, videoTitle: string, customPrompt?: string | null) {
+export async function generateNotesFromTranscript(transcript: string, videoTitle: string, customPrompt?: string | null, isPremium: boolean = false) {
   if (apiKeys[0] === "dummy-key") {
     console.warn("WARNING: Using dummy AI_API_KEY. Returning mock data.");
     return `# YouTube Video\n## ${videoTitle}\n\n## Executive Summary\nThis is a mock summary because no AI_API_KEY was provided in .env.local.\n\n## Key Takeaways\n- Add your Gemini API Key\n- Restart the server\n\n## Detailed Notes\n### Introduction\nThe transcript was processed, but AI generation was skipped.\n\n## Action Items\n- [ ] Get API Key from Google AI Studio`;
@@ -22,6 +22,10 @@ export async function generateNotesFromTranscript(transcript: string, videoTitle
 
   const prompt = `
     You are an expert educational assistant. Your goal is to transform the provided video transcript into highly structured, premium notes.
+    
+    ${isPremium 
+      ? "CRITICAL REQUIREMENT: The user is a Premium subscriber. You MUST generate EXTREMELY detailed, comprehensive, and in-depth notes. Do not summarize too much; instead, break down every single major concept, include sub-topics, examples, and nuances mentioned in the video. Make it long, extensive, and highly valuable." 
+      : "The user is a Free subscriber. Generate a standard, concise summary with the main points clearly outlined. Keep it brief and to the point."}
 
     Please output the notes in Markdown format following this exact structure:
     
