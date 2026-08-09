@@ -1,0 +1,43 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --color-background: #050505;
+  --color-foreground: #ffffff;
+  --color-muted: #888888;
+  --color-accent: #7dd3fc;
+  --color-accent-hover: #38bdf8;
+  
+  --color-card: transparent;
+  --color-border: rgba(255, 255, 255, 0.05);
+
+  --font-sans: var(--font-inter);
+}
+
+@layer base {
+  :root {
+    --background: #050505;
+    --foreground: #ffffff;
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-inter), sans-serif;
+  }
+}
+
+@layer utilities {
+  .editorial-heading {
+    @apply font-bold tracking-tighter;
+    font-size: clamp(3rem, 8vw, 8rem);
+    line-height: 1.05;
+  }
+  
+  .editorial-body {
+    @apply text-muted font-light tracking-wide;
+    font-size: clamp(1.125rem, 2vw, 1.5rem);
+    line-height: 1.6;
+  }
+}
