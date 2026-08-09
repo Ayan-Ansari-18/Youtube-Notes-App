@@ -1,8 +1,13 @@
+"use client"
 import { Section } from "@/components/layout/Section"
 import { Button } from "@/components/ui/Button"
 import { ArrowRight } from "lucide-react"
 
 export function CtaSection() {
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
   return (
     <Section id="about" className="py-32 md:py-64 relative overflow-hidden bg-background">
       {/* Background glow */}
@@ -17,7 +22,7 @@ export function CtaSection() {
         <p className="text-xl md:text-2xl text-muted mb-12 max-w-2xl mx-auto leading-relaxed">
           Turn your next YouTube video into something you can actually remember.
         </p>
-        <Button size="lg" className="h-16 px-10 text-lg rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-all hover:scale-105 shadow-2xl shadow-accent/20">
+        <Button onClick={scrollToTop} size="lg" className="h-16 px-10 text-lg rounded-xl bg-foreground text-background hover:bg-foreground/90 transition-all hover:scale-105 shadow-2xl shadow-accent/20">
           Generate My Notes
           <ArrowRight className="ml-3 h-6 w-6" />
         </Button>
