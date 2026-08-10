@@ -13,32 +13,47 @@ export function DownloadPdfButton({ targetId, filename }: { targetId: string, fi
       const element = document.getElementById(targetId)
       if (!element) return
 
-      const html2canvas = (await import('html2canvas')).default
       const jsPDFModule = await import('jspdf')
       const jsPDF = jsPDFModule.jsPDF || (jsPDFModule as any).default?.jsPDF || (jsPDFModule as any).default
 
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-      })
-
-      const imgData = canvas.toDataURL('image/png')
       const pdf = new jsPDF({ unit: 'pt', format: 'a4', orientation: 'portrait' })
 
       const pageWidth = pdf.internal.pageSize.getWidth()
       const pageHeight = pdf.internal.pageSize.getHeight()
-      const imgHeight = (canvas.height * pageWidth) / canvas.width
+      const margin = 40
+      const maxWidth = pageWidth - margin * 2
+      let y = margin + 20
 
-      let y = 0
-      let remaining = imgHeight
+      const lines = element.innerText.split('\n').filter(l => l.trim() !== '')
 
-      while (remaining > 0) {
-        pdf.addImage(imgData, 'PNG', 0, -y, pageWidth, imgHeight)
-        remaining -= pageHeight
-        y += pageHeight
-        if (remaining > 0) pdf.addPage()
+      for (const line of lines) {
+        const trimmed = line.trim()
+        let fontSize = 11
+        let isBold = false
+
+        if (trimmed.startsWith('# ')) {
+          fontSize = 22; isBold = true
+        } else if (trimmed.startsWith('## ')) {
+          fontSize = 17; isBold = true
+        } else if (trimmed.startsWith('### ')) {
+          fontSize = 13; isBold = true
+        }
+
+        pdf.setFontSize(fontSize)
+        pdf.setFont('helvetica', isBold ? 'bold' : 'normal')
+        pdf.setTextColor(30, 30, 30)
+
+        const text = trimmed.replace(/^#{1,3} /, '').replace(/\*\*(.*?)\*\*/g, '$1')
+        const wrapped = pdf.splitTextToSize(text, maxWidth)
+
+        const blockHeight = wrapped.length * (fontSize * 1.4)
+        if (y + blockHeight > pageHeight - margin) {
+          pdf.addPage()
+          y = margin + 20
+        }
+
+        pdf.text(wrapped, margin, y)
+        y += blockHeight + (isBold ? 8 : 4)
       }
 
       pdf.save(`${filename.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_notes.pdf`)
