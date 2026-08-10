@@ -22,13 +22,39 @@ export function DownloadPdfButton({ targetId, filename }: { targetId: string, fi
         useCORS: true,
         backgroundColor: '#000000',
         logging: false,
-        onclone: (_doc, el) => {
-          const style = _doc.createElement('style')
-          style.innerHTML = `* { color: inherit !important; background-color: inherit !important; }`
-          _doc.head.appendChild(style)
-          el.style.background = '#000000'
-          el.style.padding = '40px'
-          el.style.width = '900px'
+        onclone: (doc) => {
+          // Remove ALL stylesheets to eliminate lab() colors
+          const sheets = doc.querySelectorAll('link[rel="stylesheet"], style')
+          sheets.forEach(s => s.remove())
+
+          // Inject safe dark theme CSS
+          const style = doc.createElement('style')
+          style.innerHTML = `
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body { background: #000; color: #e5e5e5; font-family: Georgia, serif; }
+            #${targetId} {
+              background: #000000 !important;
+              color: #e5e5e5 !important;
+              padding: 40px !important;
+              width: 900px !important;
+              font-size: 14px;
+              line-height: 1.8;
+            }
+            h1 { font-size: 28px; color: #ffffff; margin: 24px 0 12px; border-bottom: 1px solid #333; padding-bottom: 8px; }
+            h2 { font-size: 20px; color: #ffffff; margin: 20px 0 10px; }
+            h3 { font-size: 16px; color: #cccccc; margin: 16px 0 8px; }
+            p { margin: 8px 0; color: #e5e5e5; }
+            ul, ol { padding-left: 24px; margin: 8px 0; }
+            li { margin: 4px 0; color: #e5e5e5; }
+            strong { color: #ffffff; font-weight: bold; }
+            em { color: #cccccc; font-style: italic; }
+            code { background: #1a1a1a; color: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
+            pre { background: #111; padding: 12px; border-radius: 6px; margin: 8px 0; }
+            blockquote { border-left: 3px solid #e84040; padding-left: 12px; color: #aaa; margin: 8px 0; }
+            a { color: #e84040; }
+            hr { border: none; border-top: 1px solid #333; margin: 16px 0; }
+          `
+          doc.head.appendChild(style)
         }
       })
 
@@ -36,16 +62,13 @@ export function DownloadPdfButton({ targetId, filename }: { targetId: string, fi
       const pageWidth = pdf.internal.pageSize.getWidth()
       const pageHeight = pdf.internal.pageSize.getHeight()
 
-      // Scale canvas width to fit page
       const scale = pageWidth / canvas.width
       const scaledPageHeight = pageHeight / scale
-
       const totalPages = Math.ceil(canvas.height / scaledPageHeight)
 
       for (let page = 0; page < totalPages; page++) {
         if (page > 0) pdf.addPage()
 
-        // Crop canvas for this page slice
         const srcY = page * scaledPageHeight
         const srcH = Math.min(scaledPageHeight, canvas.height - srcY)
 
@@ -58,8 +81,7 @@ export function DownloadPdfButton({ targetId, filename }: { targetId: string, fi
         ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH)
 
         const pageImgData = pageCanvas.toDataURL('image/png')
-        const renderedHeight = srcH * scale
-        pdf.addImage(pageImgData, 'PNG', 0, 0, pageWidth, renderedHeight)
+        pdf.addImage(pageImgData, 'PNG', 0, 0, pageWidth, srcH * scale)
       }
 
       pdf.save(`${filename.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_notes.pdf`)
