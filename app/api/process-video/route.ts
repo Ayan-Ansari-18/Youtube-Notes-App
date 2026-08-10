@@ -4,11 +4,32 @@ import { generateNotesFromTranscript } from '@/lib/ai';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 
-// Helper to extract Video ID
-function extractVideoId(url: string) {
-  const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
-  const match = url.match(regExp);
-  return (match && match[7].length == 11) ? match[7] : null;
+// Vercel: allow up to 120 seconds for this route (transcript + AI generation)
+export const maxDuration = 120;
+
+// Helper to extract Video ID from any YouTube URL format
+function extractVideoId(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    // youtu.be/VIDEO_ID
+    if (parsed.hostname === 'youtu.be') {
+      return parsed.pathname.slice(1).split('?')[0] || null;
+    }
+    // youtube.com/watch?v=VIDEO_ID
+    if (parsed.hostname.includes('youtube.com')) {
+      const v = parsed.searchParams.get('v');
+      if (v) return v;
+      // youtube.com/shorts/VIDEO_ID or /embed/VIDEO_ID
+      const match = parsed.pathname.match(/\/(shorts|embed|v)\/([^/?]+)/);
+      if (match) return match[2];
+    }
+  } catch {
+    // Not a valid URL, try regex fallback
+    const regExp = /^.*((youtu\.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+    const match = url.match(regExp);
+    if (match && match[7]?.length === 11) return match[7];
+  }
+  return null;
 }
 
 export async function POST(req: Request) {

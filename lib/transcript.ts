@@ -2,28 +2,57 @@
  * YouTube Transcript Fetcher
  * Uses youtube-transcript-plus as primary (works from server environments),
  * with youtube-transcript as fallback.
+ * Handles multilingual transcripts - fetches in any available language.
  */
-
-interface TranscriptItem {
-  text: string;
-  start: number;
-  duration: number;
-}
 
 // Primary: youtube-transcript-plus (more robust, works from servers)
 async function fetchViaPlus(videoId: string): Promise<string> {
   const { fetchTranscript } = await import('youtube-transcript-plus');
-  const items = await fetchTranscript(videoId);
-  if (!items || items.length === 0) throw new Error('Empty transcript returned.');
-  return items.map((item: any) => item.text).join(' ');
+
+  // Try English first, then any available language
+  const langAttempts = ['en', 'en-US', 'en-GB'];
+
+  // First try with specific langs
+  for (const lang of langAttempts) {
+    try {
+      const items = await fetchTranscript(videoId, { lang });
+      if (items && items.length > 0) {
+        return items.map((item: any) => item.text).join(' ');
+      }
+    } catch {
+      // try next lang
+    }
+  }
+
+  // Fallback: no lang specified (gets any available language)
+  const items = await fetchTranscript(videoId, { lang: 'en' });
+  if (items && items.length > 0) {
+    return items.map((item: any) => item.text).join(' ');
+  }
+  throw new Error('Empty transcript from youtube-transcript-plus');
 }
+
 
 // Fallback: youtube-transcript npm package
 async function fetchViaPackage(videoId: string): Promise<string> {
   const { YoutubeTranscript } = await import('youtube-transcript');
-  const items = await YoutubeTranscript.fetchTranscript(videoId);
-  if (!items || items.length === 0) throw new Error('Package returned empty transcript.');
-  return items.map((item: any) => item.text).join(' ');
+
+  const langAttempts = ['en', 'en-US', 'en-GB', ''];
+  let lastError: any;
+
+  for (const lang of langAttempts) {
+    try {
+      const items = lang
+        ? await YoutubeTranscript.fetchTranscript(videoId, { lang })
+        : await YoutubeTranscript.fetchTranscript(videoId);
+      if (items && items.length > 0) {
+        return items.map((item: any) => item.text).join(' ');
+      }
+    } catch (e) {
+      lastError = e;
+    }
+  }
+  throw lastError || new Error('No transcript found via youtube-transcript');
 }
 
 /**
@@ -34,7 +63,7 @@ async function fetchViaPackage(videoId: string): Promise<string> {
 export async function fetchYoutubeTranscript(videoId: string): Promise<string> {
   const errors: string[] = [];
 
-  // Method 1: youtube-transcript-plus (best for servers)
+  // Method 1: youtube-transcript-plus
   try {
     const text = await fetchViaPlus(videoId);
     if (text.trim().length > 0) return text;
@@ -56,7 +85,18 @@ export async function fetchYoutubeTranscript(videoId: string): Promise<string> {
 
   console.error('[Transcript] All methods failed:', errors);
 
+  // Provide a helpful, clear error message
+  const isDisabled = errors.some(e =>
+    e.toLowerCase().includes('disabled') || e.toLowerCase().includes('no transcript')
+  );
+
+  if (isDisabled) {
+    throw new Error(
+      'This video has subtitles disabled. Please try a different video that has CC (closed captions) enabled.'
+    );
+  }
+
   throw new Error(
-    'Could not fetch transcript. Please make sure the video has English subtitles enabled. Try opening the video on YouTube and checking if "CC" (closed captions) button is available.'
+    'Could not fetch transcript from YouTube servers. This can happen due to server restrictions. Please try again in a few minutes, or try a different video.'
   );
 }
