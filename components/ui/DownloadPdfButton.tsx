@@ -1,54 +1,51 @@
 "use client"
 
-import { useState } from "react"
 import { Button } from "@/components/ui/Button"
 import { Download } from "lucide-react"
 
 export function DownloadPdfButton({ targetId, filename }: { targetId: string, filename: string }) {
-  const [loading, setLoading] = useState(false)
+  const handleDownload = () => {
+    const element = document.getElementById(targetId)
+    if (!element) return
 
-  const handleDownload = async () => {
-    setLoading(true)
-    try {
-      const element = document.getElementById(targetId)
-      if (!element) return
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
 
-      const { default: html2canvas } = await import('html2canvas')
-      const { jsPDF } = await import('jspdf')
-
-      const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#000000' })
-      const imgData = canvas.toDataURL('image/jpeg', 0.95)
-
-      const pdf = new jsPDF({ unit: 'px', format: 'a4', orientation: 'portrait' })
-      const pdfWidth = pdf.internal.pageSize.getWidth()
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width
-
-      let heightLeft = pdfHeight
-      let position = 0
-
-      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight)
-      heightLeft -= pdf.internal.pageSize.getHeight()
-
-      while (heightLeft > 0) {
-        position -= pdf.internal.pageSize.getHeight()
-        pdf.addPage()
-        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight)
-        heightLeft -= pdf.internal.pageSize.getHeight()
-      }
-
-      const safeFilename = `${filename.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_notes.pdf`
-      pdf.save(safeFilename)
-    } catch (err) {
-      console.error('PDF generation failed:', err)
-    } finally {
-      setLoading(false)
-    }
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${filename}</title>
+          <style>
+            body { font-family: Georgia, serif; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #111; line-height: 1.7; }
+            h1, h2, h3 { font-weight: 700; margin-top: 1.5em; }
+            h1 { font-size: 2em; border-bottom: 2px solid #eee; padding-bottom: 0.3em; }
+            h2 { font-size: 1.5em; }
+            h3 { font-size: 1.2em; }
+            ul, ol { padding-left: 1.5em; }
+            li { margin: 0.3em 0; }
+            p { margin: 0.8em 0; }
+            code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+            pre { background: #f4f4f4; padding: 1em; border-radius: 6px; overflow-x: auto; }
+            blockquote { border-left: 4px solid #ddd; margin: 0; padding-left: 1em; color: #555; }
+            @media print { body { margin: 20px; } }
+          </style>
+        </head>
+        <body>${element.innerHTML}</body>
+      </html>
+    `)
+    printWindow.document.close()
+    printWindow.focus()
+    setTimeout(() => {
+      printWindow.print()
+      printWindow.close()
+    }, 500)
   }
 
   return (
-    <Button onClick={handleDownload} disabled={loading} variant="outline" className="gap-2 shrink-0 border-white/20 hover:bg-white/10">
+    <Button onClick={handleDownload} variant="outline" className="gap-2 shrink-0 border-white/20 hover:bg-white/10">
       <Download className="w-4 h-4" />
-      {loading ? 'Generating...' : 'Download PDF'}
+      Download PDF
     </Button>
   )
 }
