@@ -97,8 +97,8 @@ export function UrlInput() {
           aria-hidden="true"
         />
 
-        <div className="absolute -inset-1 bg-gradient-to-r from-accent to-blue-500 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-        <div className="relative flex items-center bg-[#050505]/80 backdrop-blur-xl border border-white/10 rounded-full p-2 hover:border-white/20 transition-colors shadow-2xl">
+        <div className="absolute -inset-1 bg-gradient-to-r from-accent to-blue-500 rounded-3xl blur-md md:blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+        <div className="relative flex items-center bg-[#050505]/90 md:bg-[#050505]/80 backdrop-blur-sm md:backdrop-blur-xl border border-white/10 rounded-full p-1 md:p-2 hover:border-white/20 transition-colors shadow-2xl">
           <input 
             type="url"
             value={url}
