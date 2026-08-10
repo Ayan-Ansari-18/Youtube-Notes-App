@@ -8,7 +8,7 @@ export function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
           <div className="flex items-center gap-2">
             <PlaySquare className="h-5 w-5 text-accent" />
-            <span className="font-bold text-lg tracking-tight">YouTube Notes</span>
+            <span className="font-bold text-lg tracking-tight">YT Notes</span>
           </div>
           
           <div className="flex gap-8 text-sm text-muted">
@@ -19,9 +19,13 @@ export function Footer() {
             <Link href="#contact" className="hover:text-foreground transition-colors">Contact</Link>
           </div>
         </div>
+
+        <div className="mt-8 text-xs text-muted/70 text-left md:text-center max-w-3xl mx-auto border-t border-white/5 pt-8">
+          <strong>Data Privacy & Google Sign-In:</strong> YT Notes uses Google Sign-In to securely create your account and save your generated notes. We only request access to your basic profile information (Name and Email) to identify you and provide our core functionality. We do not have access to your Google Drive, YouTube history, or any other sensitive data.
+        </div>
         
-        <div className="mt-12 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-muted border-t border-border pt-8">
-          <p>© {new Date().getFullYear()} YouTube Notes. All rights reserved.</p>
+        <div className="mt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-muted border-t border-border pt-8">
+          <p>© {new Date().getFullYear()} YT Notes. All rights reserved.</p>
           <div className="flex gap-4">
             <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
             <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>

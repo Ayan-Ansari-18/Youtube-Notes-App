@@ -27,7 +27,7 @@ export function Navigation({ session }: { session: any }) {
       <div className="container mx-auto px-4 md:px-6 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
           <PlaySquare className="h-6 w-6 text-accent group-hover:scale-110 transition-transform" />
-          <span className="font-bold text-lg tracking-tight">YouTube Notes</span>
+          <span className="font-bold text-lg tracking-tight">YT Notes</span>
         </Link>
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted">
           <Link href="/#product" className="hover:text-foreground transition-colors">Product</Link>
