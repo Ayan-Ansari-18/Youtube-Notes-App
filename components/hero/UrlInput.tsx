@@ -6,6 +6,7 @@ import { createPortal } from "react-dom"
 
 export function UrlInput() {
   const [url, setUrl] = useState("")
+  const [honeypot, setHoneypot] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [customPrompt, setCustomPrompt] = useState("")
@@ -43,6 +44,14 @@ export function UrlInput() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Honeypot Trap: If a bot fills this invisible field, we stop them here.
+    if (honeypot) {
+      console.warn("Bot detected via honeypot.")
+      setError("An unexpected error occurred. Please try again.") // Fake error for bots
+      return
+    }
+
     if (!url) return
     
     setIsLoading(true)
@@ -50,7 +59,6 @@ export function UrlInput() {
 
     try {
       const res = await fetch("/api/process-video", {
-
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url, customPrompt })
@@ -77,6 +85,18 @@ export function UrlInput() {
   return (
     <div className="w-full">
       <form onSubmit={handleSubmit} className="relative group flex flex-col gap-3">
+        {/* Invisible Honeypot Field */}
+        <input 
+          type="text" 
+          name="website" 
+          value={honeypot} 
+          onChange={(e) => setHoneypot(e.target.value)} 
+          style={{ display: 'none' }} 
+          tabIndex={-1} 
+          autoComplete="off" 
+          aria-hidden="true"
+        />
+
         <div className="absolute -inset-1 bg-gradient-to-r from-accent to-blue-500 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
         <div className="relative flex items-center bg-[#050505]/80 backdrop-blur-xl border border-white/10 rounded-full p-2 hover:border-white/20 transition-colors shadow-2xl">
           <input 
