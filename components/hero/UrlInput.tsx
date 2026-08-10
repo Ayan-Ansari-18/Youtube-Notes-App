@@ -66,6 +66,12 @@ export function UrlInput() {
 
       const data = await res.json()
 
+      // If user is not logged in, redirect them to sign up
+      if (res.status === 401 || (data.error && data.error.toLowerCase().includes("unauthorized"))) {
+        router.push("/signup")
+        return
+      }
+
       if (!res.ok) {
         throw new Error(data.error || "Failed to process video")
       }
