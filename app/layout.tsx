@@ -11,6 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://ytnotes.in"),
   title: "YouTube Notes — Turn Videos Into Knowledge",
   description: "Use AI to turn YouTube videos into clear summaries, structured notes, key takeaways and actionable insights.",
 };
