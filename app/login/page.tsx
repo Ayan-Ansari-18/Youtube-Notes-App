@@ -1,15 +1,17 @@
 import { Section } from "@/components/layout/Section"
 import { Button } from "@/components/ui/Button"
 import { signIn } from "@/auth"
-import { PlaySquare } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
 export default function LoginPage() {
   return (
     <Section className="min-h-screen flex items-center justify-center bg-background">
       <div className="max-w-md mx-auto w-full p-8 border border-border/50 bg-card/30 rounded-3xl backdrop-blur-sm text-center">
         <div className="flex justify-center mb-8">
-          <PlaySquare className="h-12 w-12 text-accent" />
+          <div className="relative w-16 h-16">
+            <Image src="/logo.png" alt="YT Notes Logo" fill className="object-contain drop-shadow-lg" />
+          </div>
         </div>
         <h1 className="text-3xl font-bold tracking-tight mb-2">Welcome back</h1>
         <p className="text-muted mb-8">Sign in to your account to continue.</p>

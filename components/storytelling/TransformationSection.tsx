@@ -1,6 +1,6 @@
 "use client"
 import { useRef } from "react"
-import { PlaySquare } from "lucide-react"
+import Image from "next/image"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { useGSAP } from "@gsap/react"
@@ -44,7 +44,9 @@ export function TransformationSection() {
         <div className="flex flex-col space-y-12 order-2 lg:order-1">
           <div className="aspect-video bg-black/50 border border-white/5 flex items-center justify-center relative overflow-hidden group">
             <div className="absolute inset-0 bg-gradient-to-tr from-accent/5 to-transparent opacity-50"></div>
-            <PlaySquare className="w-24 h-24 text-white/20 group-hover:scale-110 group-hover:text-accent/40 transition-all duration-1000 font-light stroke-1" />
+            <div className="relative w-24 h-24 opacity-20 group-hover:opacity-40 group-hover:scale-110 transition-all duration-1000">
+              <Image src="/logo.png" alt="YT Notes Logo" fill className="object-contain" />
+            </div>
             <div className="absolute bottom-8 left-8 text-sm font-mono text-white/50 tracking-widest">
               01:32:18
             </div>

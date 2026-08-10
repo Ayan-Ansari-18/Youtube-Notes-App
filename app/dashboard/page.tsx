@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/Button"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
-import { PlaySquare, LogOut, FileText, Zap, Lock } from "lucide-react"
+import Image from "next/image"
+import { LogOut, FileText, Zap, Lock } from "lucide-react"
 import { ApiKeyManager } from "@/components/ui/ApiKeyManager"
 import { TeamManager } from "@/components/ui/TeamManager"
 import { AccountManagerCard } from "@/components/ui/AccountManagerCard"
@@ -131,7 +132,9 @@ export default async function DashboardPage() {
                   <div className="absolute -inset-0.5 bg-gradient-to-br from-accent to-blue-600 rounded-3xl blur opacity-0 group-hover:opacity-30 transition duration-500"></div>
                   <div className="relative h-full bg-[#0a0a0a] border border-white/10 rounded-3xl p-6 flex flex-col gap-4 hover:border-white/20 transition-colors">
                     <div className="flex items-center gap-3 text-accent mb-2">
-                      <PlaySquare className="w-5 h-5 shrink-0" />
+                      <div className="relative w-5 h-5 shrink-0">
+                        <Image src="/logo.png" alt="Video Logo" fill className="object-contain" />
+                      </div>
                       <span className="text-xs font-mono uppercase tracking-wider">YouTube Video</span>
                     </div>
                     <h3 className="text-xl font-semibold line-clamp-2">{note.video.title}</h3>
