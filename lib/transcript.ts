@@ -1,7 +1,7 @@
 /**
  * YouTube Transcript Fetcher
- * Uses YouTube's Innertube API directly as a reliable fallback.
- * This avoids the fragile HTML-scraping that `youtube-transcript` package uses.
+ * Uses youtube-transcript-plus as primary (works from server environments),
+ * with youtube-transcript as fallback.
  */
 
 interface TranscriptItem {
@@ -10,131 +10,53 @@ interface TranscriptItem {
   duration: number;
 }
 
-// Parses XML-formatted transcript from YouTube
-function parseTranscriptXML(xml: string): TranscriptItem[] {
-  const items: TranscriptItem[] = [];
-  const regex = /<text start="([^"]*)" dur="([^"]*)"[^>]*>([\s\S]*?)<\/text>/g;
-  let match;
-  while ((match = regex.exec(xml)) !== null) {
-    const text = match[3]
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/<[^>]+>/g, '')
-      .trim();
-    if (text) {
-      items.push({
-        text,
-        start: parseFloat(match[1]),
-        duration: parseFloat(match[2]),
-      });
-    }
-  }
-  return items;
+// Primary: youtube-transcript-plus (more robust, works from servers)
+async function fetchViaPlus(videoId: string): Promise<string> {
+  const { fetchTranscript } = await import('youtube-transcript-plus');
+  const items = await fetchTranscript(videoId);
+  if (!items || items.length === 0) throw new Error('Empty transcript returned.');
+  return items.map((item: any) => item.text).join(' ');
 }
 
-// Fetches transcript using YouTube's internal player API (Innertube)
-async function fetchViaInnertube(videoId: string): Promise<TranscriptItem[]> {
-  const body = JSON.stringify({
-    context: {
-      client: {
-        clientName: 'ANDROID',
-        clientVersion: '19.09.37',
-        androidSdkVersion: 30,
-        hl: 'en',
-        gl: 'US',
-      },
-    },
-    videoId,
-  });
-
-  const playerRes = await fetch(
-    `https://www.youtube.com/youtubei/v1/player?key=AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'com.google.android.youtube/19.09.37 (Linux; U; Android 11)',
-        'X-YouTube-Client-Name': '3',
-        'X-YouTube-Client-Version': '19.09.37',
-      },
-      body,
-    }
-  );
-
-  if (!playerRes.ok) {
-    throw new Error(`Innertube player API returned ${playerRes.status}`);
-  }
-
-  const playerData = await playerRes.json();
-
-  const captionTracks =
-    playerData?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-
-  if (!captionTracks || captionTracks.length === 0) {
-    throw new Error('No caption tracks found. Video may not have subtitles.');
-  }
-
-  // Prefer English, fallback to first available track
-  const track =
-    captionTracks.find((t: any) => t.languageCode?.startsWith('en')) ||
-    captionTracks[0];
-
-  const transcriptUrl = track.baseUrl + '&fmt=xml';
-  const xmlRes = await fetch(transcriptUrl, {
-    headers: { 'User-Agent': 'Mozilla/5.0' },
-  });
-
-  if (!xmlRes.ok) {
-    throw new Error(`Failed to fetch transcript XML: ${xmlRes.status}`);
-  }
-
-  const xml = await xmlRes.text();
-  return parseTranscriptXML(xml);
-}
-
-// Fetches transcript using the youtube-transcript npm package as primary attempt
-async function fetchViaPackage(videoId: string): Promise<TranscriptItem[]> {
+// Fallback: youtube-transcript npm package
+async function fetchViaPackage(videoId: string): Promise<string> {
   const { YoutubeTranscript } = await import('youtube-transcript');
   const items = await YoutubeTranscript.fetchTranscript(videoId);
-  return items.map((item: any) => ({
-    text: item.text,
-    start: item.offset ?? item.start ?? 0,
-    duration: item.duration ?? 0,
-  }));
+  if (!items || items.length === 0) throw new Error('Package returned empty transcript.');
+  return items.map((item: any) => item.text).join(' ');
 }
 
 /**
- * Main export: fetches transcript with automatic fallback.
- * Tries npm package first, falls back to direct Innertube API.
+ * Main export: fetches transcript with automatic fallback chain.
+ * 1. youtube-transcript-plus (most reliable for servers)
+ * 2. youtube-transcript npm package
  */
 export async function fetchYoutubeTranscript(videoId: string): Promise<string> {
-  let items: TranscriptItem[] = [];
+  const errors: string[] = [];
 
+  // Method 1: youtube-transcript-plus (best for servers)
   try {
-    items = await fetchViaPackage(videoId);
-    if (items.length > 0) {
-      return items.map((t) => t.text).join(' ');
-    }
-  } catch (err) {
-    console.warn('[Transcript] npm package failed, trying Innertube fallback...', err);
+    const text = await fetchViaPlus(videoId);
+    if (text.trim().length > 0) return text;
+  } catch (err: any) {
+    const msg = err?.message || String(err);
+    errors.push(`TranscriptPlus: ${msg}`);
+    console.warn('[Transcript] youtube-transcript-plus failed:', msg);
   }
 
+  // Method 2: Original youtube-transcript package
   try {
-    items = await fetchViaInnertube(videoId);
-    if (items.length > 0) {
-      return items.map((t) => t.text).join(' ');
-    }
-  } catch (err) {
-    console.error('[Transcript] Innertube fallback also failed:', err);
-    throw new Error(
-      'Could not fetch transcript for this video. The video may not have English subtitles, or subtitles might be disabled by the creator.'
-    );
+    const text = await fetchViaPackage(videoId);
+    if (text.trim().length > 0) return text;
+  } catch (err: any) {
+    const msg = err?.message || String(err);
+    errors.push(`Package: ${msg}`);
+    console.warn('[Transcript] youtube-transcript package failed:', msg);
   }
+
+  console.error('[Transcript] All methods failed:', errors);
 
   throw new Error(
-    'Transcript is empty. This video may not have subtitles available.'
+    'Could not fetch transcript. Please make sure the video has English subtitles enabled. Try opening the video on YouTube and checking if "CC" (closed captions) button is available.'
   );
 }
