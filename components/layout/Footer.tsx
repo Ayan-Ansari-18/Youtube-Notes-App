@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { PlaySquare } from "lucide-react"
 
 export function Footer() {
@@ -6,8 +7,10 @@ export function Footer() {
     <footer className="w-full border-t border-border bg-background py-12 md:py-16">
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-          <div className="flex items-center gap-2">
-            <PlaySquare className="h-5 w-5 text-accent" />
+          <div className="flex items-center gap-3">
+            <div className="relative w-6 h-6">
+              <Image src="/logo.png" alt="YT Notes Logo" fill className="object-contain drop-shadow-sm" />
+            </div>
             <span className="font-bold text-lg tracking-tight">YT Notes</span>
           </div>
           
