@@ -13,47 +13,51 @@ export function DownloadPdfButton({ targetId, filename }: { targetId: string, fi
       const element = document.getElementById(targetId)
       if (!element) return
 
+      const html2canvas = (await import('html2canvas')).default
       const jsPDFModule = await import('jspdf')
       const jsPDF = jsPDFModule.jsPDF || (jsPDFModule as any).default?.jsPDF || (jsPDFModule as any).default
 
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#000000',
+        logging: false,
+        onclone: (_doc, el) => {
+          // Fix lab() color issue by injecting safe CSS overrides
+          const style = _doc.createElement('style')
+          style.innerHTML = `
+            * {
+              color: #ffffff !important;
+              background-color: transparent !important;
+              border-color: #333333 !important;
+            }
+            h1, h2, h3, h4, h5, h6 { color: #ffffff !important; }
+            p, li, span, td, th { color: #e5e5e5 !important; }
+            code { background-color: #1a1a1a !important; color: #f0f0f0 !important; }
+            pre { background-color: #111111 !important; }
+            a { color: #e84040 !important; }
+            strong { color: #ffffff !important; }
+          `
+          _doc.head.appendChild(style)
+          el.style.backgroundColor = '#000000'
+          el.style.padding = '40px'
+        }
+      })
+
+      const imgData = canvas.toDataURL('image/png')
       const pdf = new jsPDF({ unit: 'pt', format: 'a4', orientation: 'portrait' })
 
       const pageWidth = pdf.internal.pageSize.getWidth()
       const pageHeight = pdf.internal.pageSize.getHeight()
-      const margin = 40
-      const maxWidth = pageWidth - margin * 2
-      let y = margin + 20
+      const imgHeight = (canvas.height * pageWidth) / canvas.width
 
-      const lines = element.innerText.split('\n').filter(l => l.trim() !== '')
-
-      for (const line of lines) {
-        const trimmed = line.trim()
-        let fontSize = 11
-        let isBold = false
-
-        if (trimmed.startsWith('# ')) {
-          fontSize = 22; isBold = true
-        } else if (trimmed.startsWith('## ')) {
-          fontSize = 17; isBold = true
-        } else if (trimmed.startsWith('### ')) {
-          fontSize = 13; isBold = true
-        }
-
-        pdf.setFontSize(fontSize)
-        pdf.setFont('helvetica', isBold ? 'bold' : 'normal')
-        pdf.setTextColor(30, 30, 30)
-
-        const text = trimmed.replace(/^#{1,3} /, '').replace(/\*\*(.*?)\*\*/g, '$1')
-        const wrapped = pdf.splitTextToSize(text, maxWidth)
-
-        const blockHeight = wrapped.length * (fontSize * 1.4)
-        if (y + blockHeight > pageHeight - margin) {
-          pdf.addPage()
-          y = margin + 20
-        }
-
-        pdf.text(wrapped, margin, y)
-        y += blockHeight + (isBold ? 8 : 4)
+      let y = 0
+      let remaining = imgHeight
+      while (remaining > 0) {
+        pdf.addImage(imgData, 'PNG', 0, -y, pageWidth, imgHeight)
+        remaining -= pageHeight
+        y += pageHeight
+        if (remaining > 0) pdf.addPage()
       }
 
       pdf.save(`${filename.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_notes.pdf`)
