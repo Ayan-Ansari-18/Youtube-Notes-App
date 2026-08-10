@@ -35,15 +35,16 @@ export async function POST(req: Request) {
       create: { teamId: team.id, email, token }
     });
 
-    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?invite=${token}`;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL === "http://localhost:3000" ? "https://ytnotes.in" : (process.env.NEXT_PUBLIC_APP_URL || "https://ytnotes.in");
+    const inviteLink = `${baseUrl}/dashboard?invite=${token}`;
     
     // Send email via SMTP
     try {
       if (process.env.SMTP_EMAIL && process.env.SMTP_PASSWORD) {
         await transporter.sendMail({
-          from: `"YouTube Notes Team" <${process.env.SMTP_EMAIL}>`,
+          from: `"YT Notes Team" <${process.env.SMTP_EMAIL}>`,
           to: email,
-          subject: `Invitation to join ${team.name} on YouTube Notes`,
+          subject: `Invitation to join ${team.name} on YT Notes`,
           html: getTeamInviteTemplate(team.name, inviteLink)
         });
       } else {

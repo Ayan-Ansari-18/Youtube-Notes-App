@@ -13,13 +13,13 @@ export const getTeamInviteTemplate = (teamName: string, inviteLink: string) => {
     <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f5; padding: 40px 0; width: 100%;">
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);">
         <div style="background: linear-gradient(135deg, #18181b 0%, #27272a 100%); padding: 40px; text-align: center;">
-          <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">YouTube Notes</h1>
+          <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">YT Notes</h1>
           <p style="color: #a1a1aa; margin-top: 8px; font-size: 16px;">Enterprise Workspace</p>
         </div>
         <div style="padding: 48px 40px;">
           <h2 style="color: #18181b; font-size: 22px; font-weight: 700; margin-top: 0; margin-bottom: 16px;">You've been invited!</h2>
           <p style="color: #52525b; font-size: 16px; line-height: 26px; margin-bottom: 32px;">
-            You have been invited to join the <strong>${teamName}</strong> team workspace on YouTube Notes. 
+            You have been invited to join the <strong>${teamName}</strong> team workspace on YT Notes. 
             Access shared AI summaries, collaborate with your team, and supercharge your learning.
           </p>
           <div style="text-align: center; margin-bottom: 40px;">
