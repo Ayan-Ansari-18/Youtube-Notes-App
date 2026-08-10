@@ -18,32 +18,11 @@ export default function PricingPage() {
   const handlePayment = async (plan: "PRO" | "ENTERPRISE") => {
     setIsLoading(plan)
     
-    // --- TEMPORARY BYPASS FOR TESTING UI ---
-    try {
-      await fetch("/api/test-upgrade", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan })
-      });
-      
-      setTimeout(() => {
-        setPurchasedPlan(plan)
-        setShowSuccessModal(true)
-        setIsLoading(null)
-      }, 1500) // 1.5 second loading delay to look realistic
-    } catch (e) {
-      toast.error("Failed to mock upgrade");
-      setIsLoading(null);
-    }
-    
-    return;
-    // ---------------------------------------
-
     try {
       const res = await fetch("/api/razorpay/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan })
+        body: JSON.stringify({ plan, isYearly })
       })
       const data = await res.json()
 
@@ -54,11 +33,11 @@ export default function PricingPage() {
       }
 
       const options = {
-        key: data.keyId || "rzp_test_YOUR_KEY_HERE",
+        key: data.keyId,
         amount: data.amount,
         currency: data.currency,
-        name: "YouTube Notes",
-        description: `Upgrade to ${plan}`,
+        name: "YT Notes",
+        description: `Upgrade to ${plan} (${isYearly ? "Yearly" : "Monthly"})`,
         order_id: data.orderId,
         handler: async function (response: any) {
           const verifyRes = await fetch("/api/razorpay/verify-payment", {
@@ -85,7 +64,7 @@ export default function PricingPage() {
           email: "user@example.com",
         },
         theme: {
-          color: "#3b82f6"
+          color: "#e84040"
         },
         modal: {
           ondismiss: function() {

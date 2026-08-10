@@ -18,16 +18,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { plan } = await req.json();
+    const { plan, isYearly } = await req.json();
 
-    let amount = 0;
-    if (plan === "PRO") {
-      amount = 1200 * 100; // ₹1200 in paise
-    } else if (plan === "ENTERPRISE") {
-      amount = 4900 * 100; // ₹4900 in paise
-    } else {
+    // Pricing matches the pricing page exactly
+    const PRICES: Record<string, { monthly: number; yearly: number }> = {
+      PRO:        { monthly: 1500, yearly: 1200 },
+      ENTERPRISE: { monthly: 5900, yearly: 4900 },
+    };
+
+    if (!PRICES[plan]) {
       return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
     }
+
+    const pricePerMonth = isYearly ? PRICES[plan].yearly : PRICES[plan].monthly;
+    const amount = pricePerMonth * 100; // Convert to paise
 
     const options = {
       amount,
