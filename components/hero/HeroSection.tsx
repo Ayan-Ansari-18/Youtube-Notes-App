@@ -54,12 +54,12 @@ export function HeroSection() {
 
       <div className="container relative z-10 mx-auto px-4 text-center mt-12">
         <h1 className="hero-title opacity-0 editorial-heading max-w-6xl mx-auto mb-8">
-          Turn YouTube <br />
+          Turn Videos <br />
           <span className="text-foreground/90">into knowledge.</span>
         </h1>
         
         <p className="hero-desc opacity-0 editorial-body max-w-2xl mx-auto mb-16">
-          Paste a video. Let AI turn it into clear summaries, structured notes and insights.
+          Paste a video link. Let AI turn it into clear summaries, structured notes and insights.
         </p>
 
         <div className="hero-input opacity-0 w-full max-w-3xl mx-auto">
