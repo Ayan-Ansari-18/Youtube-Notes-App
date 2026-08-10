@@ -66,11 +66,21 @@ export async function POST(req: Request) {
     });
 
     if (existingVideo && existingVideo.notes.length > 0) {
-      return NextResponse.json({ 
-        message: "Found existing notes",
-        note: existingVideo.notes[0],
-        video: existingVideo 
-      });
+      const existingNote = existingVideo.notes[0];
+      // Skip cache if note is a mock/failed note — regenerate it
+      const isMockNote = existingNote.content?.includes('Mock summary') || 
+                         existingNote.content?.includes('add AI_API_KEY') ||
+                         existingNote.content?.trim().length < 50;
+      if (!isMockNote) {
+        return NextResponse.json({ 
+          message: "Found existing notes",
+          note: existingNote,
+          video: existingVideo 
+        });
+      }
+      // Delete the bad mock note so we can regenerate
+      await prisma.note.delete({ where: { id: existingNote.id } });
+      console.log('[Cache] Deleted mock note, will regenerate...');
     }
 
     // 2. Get video title via oembed (fast, reliable)
