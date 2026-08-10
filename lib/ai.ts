@@ -70,16 +70,16 @@ export async function generateNotesFromYoutubeUrl(
       console.log(`[Gemini URL] Trying key ${i + 1}/${availableKeys.length}...`);
       const genAI = new GoogleGenerativeAI(key);
       // Use gemini-1.5-flash which supports YouTube URL natively
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
       const result = await model.generateContent([
+        { text: prompt },
         {
           fileData: {
-            mimeType: "video/mp4",  // Gemini accepts YouTube URLs here
-            fileUri: youtubeUrl,
+            mimeType: "video/mp4",
+            fileUri: youtubeUrl.replace('youtu.be/', 'www.youtube.com/watch?v=').replace(/[?&]si=[^&]*/g, ''),
           },
         },
-        { text: prompt },
       ]);
 
       const response = await result.response;
@@ -117,7 +117,7 @@ export async function generateNotesFromTranscript(
     try {
       console.log(`[Gemini Transcript] Trying key ${i + 1}/${availableKeys.length}...`);
       const genAI = new GoogleGenerativeAI(key);
-      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
       
       const result = await model.generateContent(prompt);
       const response = await result.response;

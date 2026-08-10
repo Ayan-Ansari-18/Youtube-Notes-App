@@ -111,7 +111,14 @@ export async function POST(req: Request) {
         generatedNotes = await generateNotesFromTranscript(fullTranscript, videoTitle, allowedCustomPrompt, isPro);
       } catch (e: any) {
         console.error("All methods failed:", e);
-        return NextResponse.json({ error: e.message || "Could not process this video. Please try again later." }, { status: 400 });
+        // If Gemini URL method also failed, show Gemini's error (more useful) not transcript error
+        const geminiMsg = geminiError?.message || '';
+        const transcriptMsg = e?.message || '';
+        const isTranscriptOnly = transcriptMsg.toLowerCase().includes('subtitle') || transcriptMsg.toLowerCase().includes('caption');
+        const errorMsg = isTranscriptOnly && geminiMsg
+          ? `Could not process this video. Please try again later.`
+          : transcriptMsg || "Could not process this video. Please try again later.";
+        return NextResponse.json({ error: errorMsg }, { status: 400 });
       }
     }
 
