@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { YoutubeTranscript } from 'youtube-transcript';
+import { fetchYoutubeTranscript } from '@/lib/transcript';
 import { generateNotesFromTranscript } from '@/lib/ai';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
@@ -52,16 +52,14 @@ export async function POST(req: Request) {
       });
     }
 
-    // 2. Fetch Transcript
-    let transcriptItems = [];
+    // 2. Fetch Transcript (with automatic Innertube fallback)
+    let fullTranscript = '';
     try {
-      transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);
-    } catch (e) {
+      fullTranscript = await fetchYoutubeTranscript(videoId);
+    } catch (e: any) {
       console.error("Transcript Error:", e);
-      return NextResponse.json({ error: "Could not fetch transcript for this video. Subtitles might be disabled." }, { status: 400 });
+      return NextResponse.json({ error: e.message || "Could not fetch transcript for this video. Subtitles might be disabled." }, { status: 400 });
     }
-
-    const fullTranscript = transcriptItems.map(t => t.text).join(' ');
     
     let videoTitle = `YouTube Video (${videoId})`;
     try {
