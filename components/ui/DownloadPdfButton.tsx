@@ -14,7 +14,8 @@ export function DownloadPdfButton({ targetId, filename }: { targetId: string, fi
       if (!element) return
 
       const html2canvas = (await import('html2canvas')).default
-      const { jsPDF } = await import('jspdf')
+      const jsPDFModule = await import('jspdf')
+      const jsPDF = jsPDFModule.jsPDF || (jsPDFModule as any).default?.jsPDF || (jsPDFModule as any).default
 
       const canvas = await html2canvas(element, {
         scale: 2,
@@ -28,14 +29,13 @@ export function DownloadPdfButton({ targetId, filename }: { targetId: string, fi
 
       const pageWidth = pdf.internal.pageSize.getWidth()
       const pageHeight = pdf.internal.pageSize.getHeight()
-      const imgWidth = pageWidth
       const imgHeight = (canvas.height * pageWidth) / canvas.width
 
       let y = 0
       let remaining = imgHeight
 
       while (remaining > 0) {
-        pdf.addImage(imgData, 'PNG', 0, -y, imgWidth, imgHeight)
+        pdf.addImage(imgData, 'PNG', 0, -y, pageWidth, imgHeight)
         remaining -= pageHeight
         y += pageHeight
         if (remaining > 0) pdf.addPage()
@@ -44,6 +44,7 @@ export function DownloadPdfButton({ targetId, filename }: { targetId: string, fi
       pdf.save(`${filename.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_notes.pdf`)
     } catch (err) {
       console.error('PDF generation failed:', err)
+      alert('PDF generation failed: ' + (err as any)?.message)
     } finally {
       setLoading(false)
     }
