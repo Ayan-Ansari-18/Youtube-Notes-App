@@ -14,14 +14,10 @@ function shuffleArray(array: string[]) {
   return newArr;
 }
 
-export async function generateNotesFromTranscript(transcript: string, videoTitle: string, customPrompt?: string | null, isPremium: boolean = false) {
-  if (apiKeys[0] === "dummy-key") {
-    console.warn("WARNING: Using dummy AI_API_KEY. Returning mock data.");
-    return `# YouTube Video\n## ${videoTitle}\n\n## Executive Summary\nThis is a mock summary because no AI_API_KEY was provided in .env.local.\n\n## Key Takeaways\n- Add your Gemini API Key\n- Restart the server\n\n## Detailed Notes\n### Introduction\nThe transcript was processed, but AI generation was skipped.\n\n## Action Items\n- [ ] Get API Key from Google AI Studio`;
-  }
-
-  const prompt = `
-    You are an expert educational assistant. Your goal is to transform the provided video transcript into highly structured, premium notes.
+function buildPrompt(videoTitle: string, isPremium: boolean, customPrompt?: string | null, transcriptMode = false): string {
+  return `
+    You are an expert educational assistant. Your goal is to transform this YouTube video into highly structured, premium notes.
+    ${transcriptMode ? 'The video transcript is provided below.' : 'Analyze the full video content from the YouTube URL provided.'}
     
     ${isPremium 
       ? "CRITICAL REQUIREMENT: The user is a Premium subscriber. You MUST generate EXTREMELY detailed, comprehensive, and in-depth notes. Do not summarize too much; instead, break down every single major concept, include sub-topics, examples, and nuances mentioned in the video. Make it long, extensive, and highly valuable." 
@@ -47,11 +43,71 @@ export async function generateNotesFromTranscript(transcript: string, videoTitle
     - [Any actionable advice or next steps mentioned in the video]
 
     ${customPrompt ? `\n    ## IMPORTANT CUSTOM INSTRUCTIONS FROM USER\n    ${customPrompt}\n    Please strictly follow the above instructions while formatting or translating the notes.\n` : ""}
-
-    ---
-    Transcript:
-    ${transcript}
   `;
+}
+
+/**
+ * NEW: Generate notes by passing YouTube URL directly to Gemini.
+ * Gemini natively supports YouTube URLs — no transcript scraping needed!
+ */
+export async function generateNotesFromYoutubeUrl(
+  youtubeUrl: string,
+  videoTitle: string,
+  customPrompt?: string | null,
+  isPremium: boolean = false
+) {
+  if (apiKeys[0] === "dummy-key") {
+    return `# YouTube Video\n## ${videoTitle}\n\n## Executive Summary\nMock summary — add AI_API_KEY.\n`;
+  }
+
+  const prompt = buildPrompt(videoTitle, isPremium, customPrompt, false);
+  const availableKeys = shuffleArray(apiKeys);
+  let lastError: any = null;
+
+  for (let i = 0; i < availableKeys.length; i++) {
+    const key = availableKeys[i];
+    try {
+      console.log(`[Gemini URL] Trying key ${i + 1}/${availableKeys.length}...`);
+      const genAI = new GoogleGenerativeAI(key);
+      // Use gemini-1.5-flash which supports YouTube URL natively
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+      const result = await model.generateContent([
+        {
+          fileData: {
+            mimeType: "video/mp4",  // Gemini accepts YouTube URLs here
+            fileUri: youtubeUrl,
+          },
+        },
+        { text: prompt },
+      ]);
+
+      const response = await result.response;
+      return response.text();
+    } catch (error: any) {
+      console.error(`[Gemini URL] Key ${i + 1} failed:`, error?.message);
+      lastError = error;
+    }
+  }
+
+  throw new Error(lastError?.message || "Gemini could not process this YouTube URL.");
+}
+
+/**
+ * FALLBACK: Generate notes from a plain text transcript.
+ */
+export async function generateNotesFromTranscript(
+  transcript: string,
+  videoTitle: string,
+  customPrompt?: string | null,
+  isPremium: boolean = false
+) {
+  if (apiKeys[0] === "dummy-key") {
+    console.warn("WARNING: Using dummy AI_API_KEY. Returning mock data.");
+    return `# YouTube Video\n## ${videoTitle}\n\n## Executive Summary\nThis is a mock summary because no AI_API_KEY was provided in .env.local.\n\n## Key Takeaways\n- Add your Gemini API Key\n- Restart the server\n\n## Detailed Notes\n### Introduction\nThe transcript was processed, but AI generation was skipped.\n\n## Action Items\n- [ ] Get API Key from Google AI Studio`;
+  }
+
+  const prompt = buildPrompt(videoTitle, isPremium, customPrompt, true) + `\n    ---\n    Transcript:\n    ${transcript}`;
 
   const availableKeys = shuffleArray(apiKeys);
   let lastError: any = null;
@@ -59,7 +115,7 @@ export async function generateNotesFromTranscript(transcript: string, videoTitle
   for (let i = 0; i < availableKeys.length; i++) {
     const key = availableKeys[i];
     try {
-      console.log(`Trying API key ${i + 1} of ${availableKeys.length}...`);
+      console.log(`[Gemini Transcript] Trying key ${i + 1}/${availableKeys.length}...`);
       const genAI = new GoogleGenerativeAI(key);
       const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
       
@@ -67,18 +123,18 @@ export async function generateNotesFromTranscript(transcript: string, videoTitle
       const response = await result.response;
       return response.text();
     } catch (error: any) {
-      console.error(`Gemini AI Error with key ${i + 1}:`, error?.message);
+      console.error(`[Gemini Transcript] Key ${i + 1} failed:`, error?.message);
       lastError = error;
     }
   }
 
-  // If we get here, all keys failed
-  if (lastError?.status === 503 || lastError?.message?.includes("503") || lastError?.message?.includes("Service Unavailable")) {
-    throw new Error("Gemini AI is experiencing high demand across all our keys. Please try again in a few seconds.");
+  if (lastError?.status === 503 || lastError?.message?.includes("503")) {
+    throw new Error("Gemini AI is experiencing high demand. Please try again in a few seconds.");
   }
-  if (lastError?.status === 429 || lastError?.message?.includes("429") || lastError?.message?.includes("quota")) {
-    throw new Error("We have hit the rate limit on all our Gemini API keys. Please try again later.");
+  if (lastError?.status === 429 || lastError?.message?.includes("429")) {
+    throw new Error("Rate limit reached. Please try again later.");
   }
   
   throw new Error(lastError?.message || "Failed to generate notes from transcript.");
 }
+

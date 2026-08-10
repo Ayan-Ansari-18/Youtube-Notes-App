@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
+import { generateNotesFromYoutubeUrl, generateNotesFromTranscript } from '@/lib/ai';
 import { fetchYoutubeTranscript } from '@/lib/transcript';
-import { generateNotesFromTranscript } from '@/lib/ai';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 
@@ -73,35 +73,36 @@ export async function POST(req: Request) {
       });
     }
 
-    // 2. Fetch Transcript (with automatic Innertube fallback)
-    let fullTranscript = '';
-    try {
-      fullTranscript = await fetchYoutubeTranscript(videoId);
-    } catch (e: any) {
-      console.error("Transcript Error:", e);
-      return NextResponse.json({ error: e.message || "Could not fetch transcript for this video. Subtitles might be disabled." }, { status: 400 });
-    }
-    
+    // 2. Get video title via oembed (fast, reliable)
     let videoTitle = `YouTube Video (${videoId})`;
     try {
       const oembedRes = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
       if (oembedRes.ok) {
         const oembedData = await oembedRes.json();
-        if (oembedData.title) {
-          videoTitle = oembedData.title;
-        }
+        if (oembedData.title) videoTitle = oembedData.title;
       }
-    } catch (err) {
-      console.error("Could not fetch video title", err);
-    }
+    } catch { /* title fallback is fine */ }
 
-    // 3. Generate Notes via AI
+    // 3. Generate Notes — Gemini processes YouTube URL directly (no transcript needed!)
     let generatedNotes = "";
+    let fullTranscript = "[Generated directly from YouTube video by Gemini AI]";
     try {
-       generatedNotes = await generateNotesFromTranscript(fullTranscript, videoTitle, allowedCustomPrompt, isPro);
-    } catch (e: any) {
-      console.error("AI Generation Error inside route:", e);
-      return NextResponse.json({ error: e.message || "AI Processing failed due to high demand. Please try again later." }, { status: 503 });
+      generatedNotes = await generateNotesFromYoutubeUrl(
+        `https://www.youtube.com/watch?v=${videoId}`,
+        videoTitle,
+        allowedCustomPrompt,
+        isPro
+      );
+    } catch (geminiError: any) {
+      console.warn('Gemini direct URL failed, trying transcript fallback:', geminiError?.message);
+      // Fallback: fetch transcript manually then send to Gemini
+      try {
+        fullTranscript = await fetchYoutubeTranscript(videoId);
+        generatedNotes = await generateNotesFromTranscript(fullTranscript, videoTitle, allowedCustomPrompt, isPro);
+      } catch (e: any) {
+        console.error("All methods failed:", e);
+        return NextResponse.json({ error: e.message || "Could not process this video. Please try again later." }, { status: 400 });
+      }
     }
 
     // 4. Save to Database
