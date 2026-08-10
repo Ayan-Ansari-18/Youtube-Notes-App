@@ -22,37 +22,35 @@ export function DownloadPdfButton({ targetId, filename }: { targetId: string, fi
         useCORS: true,
         backgroundColor: '#000000',
         logging: false,
-        onclone: (doc) => {
-          // Remove ALL stylesheets to eliminate lab() colors
-          const sheets = doc.querySelectorAll('link[rel="stylesheet"], style')
-          sheets.forEach(s => s.remove())
+        onclone: (doc, el) => {
+          // Remove ALL stylesheets
+          doc.querySelectorAll('link[rel="stylesheet"], style').forEach(s => s.remove())
 
-          // Inject safe dark theme CSS
+          // Force override ALL inline styles that may contain lab() colors
+          doc.querySelectorAll<HTMLElement>('*').forEach(node => {
+            node.style.cssText = ''
+            node.removeAttribute('class')
+          })
+
+          // Inject safe dark CSS
           const style = doc.createElement('style')
           style.innerHTML = `
-            * { box-sizing: border-box; margin: 0; padding: 0; }
-            body { background: #000; color: #e5e5e5; font-family: Georgia, serif; }
-            #${targetId} {
-              background: #000000 !important;
-              color: #e5e5e5 !important;
-              padding: 40px !important;
-              width: 900px !important;
-              font-size: 14px;
-              line-height: 1.8;
-            }
-            h1 { font-size: 28px; color: #ffffff; margin: 24px 0 12px; border-bottom: 1px solid #333; padding-bottom: 8px; }
-            h2 { font-size: 20px; color: #ffffff; margin: 20px 0 10px; }
-            h3 { font-size: 16px; color: #cccccc; margin: 16px 0 8px; }
+            * { box-sizing: border-box; }
+            body { background: #000000; color: #e5e5e5; font-family: Georgia, serif; margin: 0; padding: 0; }
+            #${targetId} { background: #000000; color: #e5e5e5; padding: 40px; width: 900px; font-size: 14px; line-height: 1.8; }
+            h1 { font-size: 28px; color: #ffffff; font-weight: bold; margin: 24px 0 12px; border-bottom: 1px solid #333333; padding-bottom: 8px; }
+            h2 { font-size: 20px; color: #ffffff; font-weight: bold; margin: 20px 0 10px; }
+            h3 { font-size: 16px; color: #cccccc; font-weight: bold; margin: 16px 0 8px; }
             p { margin: 8px 0; color: #e5e5e5; }
             ul, ol { padding-left: 24px; margin: 8px 0; }
             li { margin: 4px 0; color: #e5e5e5; }
-            strong { color: #ffffff; font-weight: bold; }
-            em { color: #cccccc; font-style: italic; }
+            strong, b { color: #ffffff; font-weight: bold; }
+            em, i { color: #cccccc; font-style: italic; }
             code { background: #1a1a1a; color: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
-            pre { background: #111; padding: 12px; border-radius: 6px; margin: 8px 0; }
-            blockquote { border-left: 3px solid #e84040; padding-left: 12px; color: #aaa; margin: 8px 0; }
+            pre { background: #111111; padding: 12px; border-radius: 6px; margin: 8px 0; }
+            blockquote { border-left: 3px solid #e84040; padding-left: 12px; color: #aaaaaa; margin: 8px 0; }
             a { color: #e84040; }
-            hr { border: none; border-top: 1px solid #333; margin: 16px 0; }
+            hr { border: none; border-top: 1px solid #333333; margin: 16px 0; }
           `
           doc.head.appendChild(style)
         }
