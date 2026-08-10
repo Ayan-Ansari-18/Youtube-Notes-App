@@ -5,9 +5,8 @@ import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import Image from "next/image"
-import { LogOut, FileText, Zap, Lock } from "lucide-react"
+import { LogOut, FileText, Lock } from "lucide-react"
 import { ApiKeyManager } from "@/components/ui/ApiKeyManager"
-import { TeamManager } from "@/components/ui/TeamManager"
 import { AccountManagerCard } from "@/components/ui/AccountManagerCard"
 
 export default async function DashboardPage() {
@@ -86,26 +85,21 @@ export default async function DashboardPage() {
           )}
 
           {dbUser.plan === "ENTERPRISE" && (
-            <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <TeamManager />
+            <div className="mt-8">
               <AccountManagerCard />
             </div>
           )}
           {dbUser.plan === "PRO" && (
-            <div className="mt-8 relative overflow-hidden rounded-3xl border border-white/5 min-h-[400px] flex items-center justify-center">
+            <div className="mt-8 relative overflow-hidden rounded-3xl border border-white/5 min-h-[200px] flex items-center justify-center">
               <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/50 backdrop-blur-md p-8 text-center">
                 <div className="w-16 h-16 bg-accent/20 rounded-full flex items-center justify-center mb-4">
                   <Lock className="w-8 h-8 text-accent opacity-90" />
                 </div>
                 <h3 className="text-2xl font-bold mb-2 text-white">Enterprise Features</h3>
-                <p className="text-muted mb-6 max-w-sm mx-auto">Upgrade to Enterprise to unlock Team Collaboration, custom prompts, and a Dedicated Account Manager.</p>
+                <p className="text-muted mb-6 max-w-sm mx-auto">Upgrade to Enterprise to unlock Custom AI Instructions, API Access, and a Dedicated Account Manager.</p>
                 <Link href="/pricing">
                   <Button className="bg-accent text-background hover:bg-accent/90 shadow-lg shadow-accent/20">Upgrade to Unlock</Button>
                 </Link>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 opacity-40 pointer-events-none select-none blur-[2px] p-1">
-                <TeamManager />
-                <AccountManagerCard />
               </div>
             </div>
           )}

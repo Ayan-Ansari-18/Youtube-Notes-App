@@ -202,7 +202,6 @@ export default function PricingPage() {
               <ul className="space-y-4 mb-8 flex-1">
                 {[
                   "Everything in Pro",
-                  "Team collaboration",
                   "Custom AI instructions",
                   "API Access",
                   "Dedicated account manager"

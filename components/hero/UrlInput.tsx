@@ -18,7 +18,7 @@ export function UrlInput() {
     fetch('/api/user/me')
       .then(res => res.json())
       .then(data => {
-        if (data?.user?.plan === 'PRO' || data?.user?.plan === 'ENTERPRISE') {
+        if (data?.user?.plan === 'ENTERPRISE') {
           setIsPro(true)
         }
       })
