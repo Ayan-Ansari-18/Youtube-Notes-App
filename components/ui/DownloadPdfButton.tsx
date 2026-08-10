@@ -63,7 +63,7 @@ export function DownloadPdfButton({ targetId, filename }: { targetId: string, fi
       const pageHeight = pdf.internal.pageSize.getHeight()
 
       const scale = pageWidth / canvas.width
-      const scaledPageHeight = pageHeight / scale
+      const scaledPageHeight = Math.floor(pageHeight / scale)
       const totalPages = Math.ceil(canvas.height / scaledPageHeight)
 
       for (let page = 0; page < totalPages; page++) {
@@ -74,14 +74,14 @@ export function DownloadPdfButton({ targetId, filename }: { targetId: string, fi
 
         const pageCanvas = document.createElement('canvas')
         pageCanvas.width = canvas.width
-        pageCanvas.height = srcH
+        pageCanvas.height = scaledPageHeight
         const ctx = pageCanvas.getContext('2d')!
         ctx.fillStyle = '#000000'
         ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height)
         ctx.drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH)
 
         const pageImgData = pageCanvas.toDataURL('image/png')
-        pdf.addImage(pageImgData, 'PNG', 0, 0, pageWidth, srcH * scale)
+        pdf.addImage(pageImgData, 'PNG', 0, 0, pageWidth, pageHeight)
       }
 
       pdf.save(`${filename.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_notes.pdf`)
