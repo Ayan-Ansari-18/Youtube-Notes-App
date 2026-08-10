@@ -59,8 +59,9 @@ export async function POST(req: Request) {
       currency: order.currency,
       keyId: process.env.RAZORPAY_KEY_ID
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Razorpay Error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    const errMsg = error?.error?.description || error?.message || "Internal Server Error";
+    return NextResponse.json({ error: errMsg }, { status: 500 });
   }
 }
