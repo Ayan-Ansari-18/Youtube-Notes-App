@@ -1,32 +1,54 @@
 "use client"
 
+import { useState } from "react"
 import { Button } from "@/components/ui/Button"
 import { Download } from "lucide-react"
 
 export function DownloadPdfButton({ targetId, filename }: { targetId: string, filename: string }) {
+  const [loading, setLoading] = useState(false)
+
   const handleDownload = async () => {
-    const element = document.getElementById(targetId)
-    if (!element) return
+    setLoading(true)
+    try {
+      const element = document.getElementById(targetId)
+      if (!element) return
 
-    // Dynamically import html2pdf so it doesn't break SSR
-    const html2pdfModule = await import('html2pdf.js')
-    const html2pdf = html2pdfModule.default
+      const { default: html2canvas } = await import('html2canvas')
+      const { jsPDF } = await import('jspdf')
 
-    const opt = {
-      margin:       0.5,
-      filename:     `${filename.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_notes.pdf`,
-      image:        { type: 'jpeg' as const, quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true },
-      jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' as const }
-    };
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#000000' })
+      const imgData = canvas.toDataURL('image/jpeg', 0.95)
 
-    html2pdf().set(opt).from(element).save();
+      const pdf = new jsPDF({ unit: 'px', format: 'a4', orientation: 'portrait' })
+      const pdfWidth = pdf.internal.pageSize.getWidth()
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width
+
+      let heightLeft = pdfHeight
+      let position = 0
+
+      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight)
+      heightLeft -= pdf.internal.pageSize.getHeight()
+
+      while (heightLeft > 0) {
+        position -= pdf.internal.pageSize.getHeight()
+        pdf.addPage()
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, pdfHeight)
+        heightLeft -= pdf.internal.pageSize.getHeight()
+      }
+
+      const safeFilename = `${filename.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_notes.pdf`
+      pdf.save(safeFilename)
+    } catch (err) {
+      console.error('PDF generation failed:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <Button onClick={handleDownload} variant="outline" className="gap-2 shrink-0 border-white/20 hover:bg-white/10">
+    <Button onClick={handleDownload} disabled={loading} variant="outline" className="gap-2 shrink-0 border-white/20 hover:bg-white/10">
       <Download className="w-4 h-4" />
-      Download PDF
+      {loading ? 'Generating...' : 'Download PDF'}
     </Button>
   )
 }
