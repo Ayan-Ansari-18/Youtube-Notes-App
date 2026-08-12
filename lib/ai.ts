@@ -56,40 +56,9 @@ export async function generateNotesFromYoutubeUrl(
   customPrompt?: string | null,
   isPremium: boolean = false
 ) {
-  if (apiKeys[0] === "dummy-key") {
-    return `# YouTube Video\n## ${videoTitle}\n\n## Executive Summary\nMock summary — add AI_API_KEY.\n`;
-  }
-
-  const prompt = buildPrompt(videoTitle, isPremium, customPrompt, false);
-  const availableKeys = shuffleArray(apiKeys);
-  let lastError: any = null;
-
-  for (let i = 0; i < availableKeys.length; i++) {
-    const key = availableKeys[i];
-    try {
-      console.log(`[Gemini URL] Trying key ${i + 1}/${availableKeys.length}...`);
-      const genAI = new GoogleGenerativeAI(key);
-      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
-
-      const result = await model.generateContent([
-        { text: prompt },
-        {
-          fileData: {
-            mimeType: "video/mp4",
-            fileUri: youtubeUrl.replace('youtu.be/', 'www.youtube.com/watch?v=').replace(/[?&]si=[^&]*/g, ''),
-          },
-        },
-      ]);
-
-      const response = await result.response;
-      return response.text();
-    } catch (error: any) {
-      console.error(`[Gemini URL] Key ${i + 1} failed:`, error?.message);
-      lastError = error;
-    }
-  }
-
-  throw new Error(lastError?.message || "Gemini could not process this YouTube URL.");
+  // Gemini API does not natively support YouTube URLs via fileUri.
+  // It only works via Google AI Studio UI. We must fall back to transcript.
+  throw new Error("Direct YouTube URL processing is not supported by the API. Falling back to transcript.");
 }
 
 /**
