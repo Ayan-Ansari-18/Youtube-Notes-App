@@ -9,37 +9,66 @@ async function fetchViaRapidAPI(videoId: string): Promise<string> {
   const apiKey = process.env.RAPIDAPI_KEY;
   if (!apiKey) throw new Error('RAPIDAPI_KEY not set');
 
-  const url = `https://youtube-data16.p.rapidapi.com/captions/${videoId}?lang=en&format=json`;
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'x-rapidapi-host': 'youtube-data16.p.rapidapi.com',
-      'x-rapidapi-key': apiKey,
-      'Content-Type': 'application/json',
-    },
-  });
+  const headers = {
+    'x-rapidapi-host': 'youtube-data16.p.rapidapi.com',
+    'x-rapidapi-key': apiKey,
+    'Content-Type': 'application/json',
+  };
 
-  if (!response.ok) {
-    throw new Error(`RapidAPI returned status ${response.status}`);
+  // Helper to parse captions array
+  const parseCaptions = (data: any): string | null => {
+    if (Array.isArray(data) && data.length > 0) {
+      return data.map((item: any) => item.text || '').join(' ').trim();
+    }
+    if (data?.captions && Array.isArray(data.captions) && data.captions.length > 0) {
+      return data.captions.map((item: any) => item.text || '').join(' ').trim();
+    }
+    if (data?.items && Array.isArray(data.items) && data.items.length > 0) {
+      return data.items.map((item: any) => item.text || item.snippet?.text || '').join(' ').trim();
+    }
+    return null;
+  };
+
+  // Step 1: Try English first
+  const enUrl = `https://youtube-data16.p.rapidapi.com/captions/${videoId}?lang=en&format=json`;
+  const enRes = await fetch(enUrl, { method: 'GET', headers });
+
+  if (enRes.ok) {
+    const data = await enRes.json();
+    const text = parseCaptions(data);
+    if (text && text.length > 0) return text;
   }
 
-  const data = await response.json();
+  // Step 2: If English failed, check what languages are available
+  if (enRes.status === 404) {
+    const errData = await enRes.json().catch(() => ({}));
+    // Extract available languages from error message e.g. "Available languages: hi, en-US"
+    const msg: string = errData?.error?.message || '';
+    const match = msg.match(/Available languages?:\s*([^\."]+)/i);
+    const langs = match
+      ? match[1].split(',').map((l: string) => l.trim()).filter(Boolean)
+      : ['hi', 'en-US', 'en-GB', 'auto'];
 
-  // The API returns an array of caption objects with 'text' field
-  if (Array.isArray(data) && data.length > 0) {
-    return data.map((item: any) => item.text || '').join(' ').trim();
+    // Step 3: Try each available language
+    for (const lang of langs) {
+      const langUrl = `https://youtube-data16.p.rapidapi.com/captions/${videoId}?lang=${lang}&format=json`;
+      try {
+        const langRes = await fetch(langUrl, { method: 'GET', headers });
+        if (langRes.ok) {
+          const data = await langRes.json();
+          const text = parseCaptions(data);
+          if (text && text.length > 0) {
+            console.log(`[Transcript] RapidAPI success with lang: ${lang}`);
+            return text;
+          }
+        }
+      } catch {
+        // try next language
+      }
+    }
   }
 
-  // Some responses wrap in a 'captions' or 'items' key
-  if (data?.captions && Array.isArray(data.captions) && data.captions.length > 0) {
-    return data.captions.map((item: any) => item.text || '').join(' ').trim();
-  }
-
-  if (data?.items && Array.isArray(data.items) && data.items.length > 0) {
-    return data.items.map((item: any) => item.text || item.snippet?.text || '').join(' ').trim();
-  }
-
-  throw new Error('RapidAPI returned empty transcript data');
+  throw new Error('RapidAPI: No captions available for this video');
 }
 
 // Method 1: youtube-transcript-plus (more robust, works from servers)
