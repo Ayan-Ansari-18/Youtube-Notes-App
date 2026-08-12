@@ -111,13 +111,14 @@ export async function POST(req: Request) {
         generatedNotes = await generateNotesFromTranscript(fullTranscript, videoTitle, allowedCustomPrompt, isPro);
       } catch (e: any) {
         console.error("All methods failed:", e);
-        // If Gemini URL method also failed, show Gemini's error (more useful) not transcript error
-        const geminiMsg = geminiError?.message || '';
         const transcriptMsg = e?.message || '';
         const isTranscriptOnly = transcriptMsg.toLowerCase().includes('subtitle') || transcriptMsg.toLowerCase().includes('caption');
-        const errorMsg = isTranscriptOnly && geminiMsg
-          ? `Could not process this video. Please try again later.`
-          : transcriptMsg || "Could not process this video. Please try again later.";
+        
+        let errorMsg = "Could not process this video. Please try again later.";
+        if (isTranscriptOnly) {
+           errorMsg = "This video does not have closed captions (subtitles). AI needs subtitles to generate notes. Please try another video.";
+        }
+        
         return NextResponse.json({ error: errorMsg }, { status: 400 });
       }
     }
