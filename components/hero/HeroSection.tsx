@@ -36,7 +36,7 @@ export function HeroSection() {
   }, { scope: containerRef })
 
   return (
-    <section ref={containerRef} className="relative h-[100svh] min-h-[800px] flex flex-col items-center justify-center overflow-hidden">
+    <section id="product" ref={containerRef} className="relative h-[100svh] min-h-[800px] flex flex-col items-center justify-center overflow-hidden">
       {/* Cinematic Parallax Background */}
       <div ref={bgRef} className="absolute inset-[-10%] z-0 h-[120%] w-[120%] pointer-events-none">
         <Image 

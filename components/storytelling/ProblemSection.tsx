@@ -41,7 +41,7 @@ export function ProblemSection() {
   }, { scope: containerRef })
 
   return (
-    <section id="product" className="min-h-screen py-64 flex flex-col items-center justify-center bg-background">
+    <section className="min-h-screen py-64 flex flex-col items-center justify-center bg-background">
       <div className="max-w-6xl mx-auto px-4 text-center space-y-24" ref={containerRef}>
         <h2 className="editorial-heading text-muted">
           You don't have a time problem. <br className="hidden md:block" />
