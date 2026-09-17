@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { SmoothScroll } from "@/components/layout/SmoothScroll";
 import { NavWrapper } from "@/components/layout/NavWrapper";
 import { Toaster } from "sonner";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const inter = Inter({
@@ -29,6 +30,7 @@ export default function RootLayout({
           {children}
         </SmoothScroll>
         <Toaster theme="dark" position="bottom-right" />
+        <Analytics />
       </body>
     </html>
   );
