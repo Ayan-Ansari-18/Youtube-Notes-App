@@ -85,7 +85,7 @@ export async function generateNotesFromTranscript(
     try {
       console.log(`[Gemini Transcript] Trying key ${i + 1}/${availableKeys.length}...`);
       const genAI = new GoogleGenerativeAI(key);
-      const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+      const model = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
       
       const result = await model.generateContent(prompt);
       const response = await result.response;
