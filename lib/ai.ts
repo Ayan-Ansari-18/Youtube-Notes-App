@@ -55,7 +55,7 @@ export async function generateNotesFromYoutubeUrl(
   videoTitle: string,
   customPrompt?: string | null,
   isPremium: boolean = false
-) {
+): Promise<string> {
   // Gemini API does not natively support YouTube URLs via fileUri.
   // It only works via Google AI Studio UI. We must fall back to transcript.
   throw new Error("Direct YouTube URL processing is not supported by the API. Falling back to transcript.");
@@ -85,7 +85,7 @@ export async function generateNotesFromTranscript(
     try {
       console.log(`[Gemini Transcript] Trying key ${i + 1}/${availableKeys.length}...`);
       const genAI = new GoogleGenerativeAI(key);
-      const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -103,6 +103,11 @@ export async function generateNotesFromTranscript(
     throw new Error("Rate limit reached. Please try again later.");
   }
   
-  throw new Error(lastError?.message || "Failed to generate notes from transcript.");
+  const errorStr = lastError?.message || "";
+  if (errorStr.includes("GoogleGenerativeAI Error") || errorStr.includes("403") || errorStr.includes("404")) {
+    throw new Error("AI provider is currently unavailable or misconfigured. Please contact support or try again later.");
+  }
+  
+  throw new Error(errorStr || "Failed to generate notes from transcript.");
 }
 

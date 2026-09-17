@@ -111,13 +111,9 @@ export async function POST(req: Request) {
         generatedNotes = await generateNotesFromTranscript(fullTranscript, videoTitle, allowedCustomPrompt, isPro);
       } catch (e: any) {
         console.error("All methods failed:", e);
-        const transcriptMsg = e?.message || '';
-        const isTranscriptOnly = transcriptMsg.toLowerCase().includes('subtitle') || transcriptMsg.toLowerCase().includes('caption');
         
-        let errorMsg = "Could not process this video. Please try again later.";
-        if (isTranscriptOnly) {
-           errorMsg = "This video does not have closed captions (subtitles). AI needs subtitles to generate notes. Please try another video.";
-        }
+        // Pass the specific, user-friendly error messages from lib/ai.ts and lib/transcript.ts directly
+        const errorMsg = e?.message || "Could not process this video. Please try again later.";
         
         return NextResponse.json({ error: errorMsg }, { status: 400 });
       }

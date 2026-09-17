@@ -161,9 +161,10 @@ export async function fetchYoutubeTranscript(videoId: string): Promise<string> {
 
   console.error('[Transcript] All methods failed:', errors);
 
-  const isDisabled = errors.some(e =>
-    e.toLowerCase().includes('disabled') || e.toLowerCase().includes('no transcript')
-  );
+  const isDisabled = errors.some(e => {
+    const lower = e.toLowerCase();
+    return lower.includes('disabled') || lower.includes('no transcript') || lower.includes('no captions');
+  });
 
   if (isDisabled) {
     throw new Error(
